@@ -3,6 +3,8 @@
 #### Este projeto é uma calculadora interativa em **Node.js** baseada em **ANTLR4** com tratamento de entradas inválidas, inspirada no projeto : https://github.com/keyi6/calculANTLR-python3# 
 ---
 
+![demo](./video-demo.gif)
+
 ## Como instalar
 
 - Instale o Antlr4
@@ -39,6 +41,7 @@ node index.js
 ```
 npx mocha calc.test.js
 ```
+
 
 
 
