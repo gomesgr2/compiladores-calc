@@ -1,4 +1,4 @@
-## Calculadora Antlr4 - Node.js
+## Disciplina Compiladore : Calculadora Antlr4 em Node.js
 
 #### Este projeto é uma calculadora interativa em **Node.js** baseada em **ANTLR4** com tratamento de entradas inválidas, inspirada no projeto : https://github.com/keyi6/calculANTLR-python3# 
 ---
@@ -39,4 +39,5 @@ node index.js
 ```
 npx mocha calc.test.js
 ```
+
 
