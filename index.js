@@ -1,70 +1,108 @@
-// index.js
-const antlr4 = require('antlr4');
-const CalculantlrLexer = require('./dist/CalculantlrLexer').CalculantlrLexer;
-const CalculantlrParser = require('./dist/CalculantlrParser').CalculantlrParser;
-const CalculantlrVisitor = require('./dist/CalculantlrVisitor').CalculantlrVisitor;
+import antlr4 from 'antlr4';
+import CalculantlrLexer from './dist/CalculantlrLexer.js';
+import CalculantlrParser from './dist/CalculantlrParser.js';
+import CalculantlrVisitor from './dist/CalculantlrVisitor.js';
+import readline from 'readline';
+
+class ThrowingErrorListener extends antlr4.error.ErrorListener {
+    syntaxError(recognizer, offendingSymbol, line, column, msg, e) {
+        throw new Error("Entrada inválida.");
+    }
+}
 
 class CalcVisitor extends CalculantlrVisitor {
-  visitAtomExpr(ctx) {
-    return parseInt(ctx.getText(), 10);
-  }
-
-  visitParenExpr(ctx) {
-    return this.visit(ctx.expr());
-  }
-
-  visitOpExpr(ctx) {
-    const left = this.visit(ctx.left);
-    const right = this.visit(ctx.right);
-    const op = ctx.op.text;
-
-    if (op === '+') {
-      return left + right;
-    } else if (op === '-') {
-      return left - right;
-    } else if (op === '*') {
-      return left * right;
-    } else if (op === '/') {
-      if (right === 0) {
-        console.error('divide by zero!');
-        return 0;
-      }
-      return left / right;
+    visitAddExpr(ctx) {
+        let value = this.visit(ctx.mulExpr(0));
+        for (let i = 1; i < ctx.mulExpr().length; i++) {
+            const op = ctx.getChild(2 * i - 1).getText();
+            const right = this.visit(ctx.mulExpr(i));
+            if (op === '+') value += right;
+            else value -= right;
+        }
+        return value;
     }
-  }
+
+    visitMulExpr(ctx) {
+        let value = this.visit(ctx.atom(0));
+        for (let i = 1; i < ctx.atom().length; i++) {
+            const op = ctx.getChild(2 * i - 1).getText();
+            const right = this.visit(ctx.atom(i));
+            if (op === '*') value *= right;
+            else {
+                if (right === 0) {
+                    throw new Error('divide by zero!');
+                }
+                value /= right;
+            }
+        }
+        return value;
+    }
+
+    visitOpExpr(ctx) {
+        const left = this.visit(ctx.expr(0));
+        const right = this.visit(ctx.expr(1));
+        const op = ctx.op.text;
+
+        switch (op) {
+            case '+': return left + right;
+            case '-': return left - right;
+            case '*': return left * right;
+            case '/':
+                if (right === 0) {
+                    throw new Error('divide by zero!');
+                }
+                return left / right;
+            default:
+                throw new Error('Invalid operator');
+        }
+    }
+
+    visitAtomExpr(ctx) {
+        return parseInt(ctx.INT().getText(), 10);
+    }
+
+    visitParenExpr(ctx) {
+        return this.visit(ctx.expr());
+    }
 }
 
-function calc(line) {
-  const chars = new antlr4.InputStream(line);
-  const lexer = new CalculantlrLexer(chars);
-  const tokens = new antlr4.CommonTokenStream(lexer);
-  const parser = new CalculantlrParser(tokens);
-  parser.buildParseTrees = true;
-  const tree = parser.expr();
+export function calc(line) {
+    const chars = new antlr4.InputStream(line);
+    const lexer = new CalculantlrLexer(chars);
 
-  const visitor = new CalcVisitor();
-  return visitor.visit(tree);
+    lexer.removeErrorListeners();
+    lexer.addErrorListener(new ThrowingErrorListener());
+
+    const tokens = new antlr4.CommonTokenStream(lexer);
+    const parser = new CalculantlrParser(tokens);
+
+    parser.removeErrorListeners();
+    parser.addErrorListener(new ThrowingErrorListener());
+
+    parser.buildParseTrees = true;
+    const tree = parser.expr();
+
+    const visitor = new CalcVisitor();
+    return visitor.visit(tree);
 }
 
-// Loop para ler a entrada do usuário
-const readline = require('readline');
 const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-  prompt: '>>> '
+    input: process.stdin,
+    output: process.stdout,
+    prompt: '>>> '
 });
 
 rl.prompt();
 
 rl.on('line', (line) => {
-  try {
-    const result = calc(line);
-    console.log(result);
-  } catch (e) {
-    console.error('Erro:', e.message);
-  }
-  rl.prompt();
+    try {
+        const result = calc(line);
+        console.log(result);
+    } catch (e) {
+        console.error(e.message);
+    }
+    rl.prompt();
 }).on('close', () => {
-  console.log('Saindo...');
-  process.exit(0);
+    console.log('Exiting...');
+    process.exit(0);
 });

@@ -8,7 +8,12 @@
   },
   "author": "",
   "license": "ISC",
+  "type": "module",
   "dependencies": {
     "antlr4": "^4.13.2"
+  },
+  "devDependencies": {
+    "chai": "^5.2.1",
+    "mocha": "^11.7.1"
   }
 }
